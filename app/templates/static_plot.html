@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block head %}
+{{ super() }}
+{{ bokeh_tag|safe }}
+{% endblock %}
+
+{% block contentbody %}
+	<h2>Static plot test</h2>
+
+{% endblock %}
+

@@ -1,2 +1,2 @@
 # solartools
-Tools for solving solar energy problems
+Tools for solving solar energy problems.
