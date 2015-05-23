@@ -4,7 +4,6 @@ Flask-Restful
 Flask-Bootstrap
 Flask-AppConfig
 pyserial
-bokeh
 pandas
 numpy
-redis
+pygal

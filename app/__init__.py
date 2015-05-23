@@ -5,8 +5,8 @@ from flask import Flask, url_for, render_template, abort, flash, redirect, sessi
 from flask_bootstrap import Bootstrap
 from flask_appconfig import AppConfig
 from jinja2 import TemplateNotFound
-from app.calculators import testplot_bp
 from app.errorhandler import register_errorhandlers 
+from app.grapher import grapher 
 
 def create_app(config=None, configfile=None):
     """
@@ -34,11 +34,11 @@ def create_app(config=None, configfile=None):
         pass
 
     # Add blueprints
-    app.register_blueprint(testplot_bp) # register Frontend blueprint
+    app.register_blueprint(grapher)
 
     # Add errorhandler
     register_errorhandlers(app)
-    
+   
     # Add frontpage
     @app.route('/')
     def index():
