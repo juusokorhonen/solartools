@@ -38,7 +38,12 @@ def create_app(config=None, configfile=None):
 
     # Add errorhandler
     register_errorhandlers(app)
-   
+  
+    # Register menu
+    g[navmenu] = [
+            {'endpoint': 'index', 'name': 'Start'},
+            ]
+
     # Add frontpage
     @app.route('/')
     def index():
