@@ -9,8 +9,7 @@ class Config(object):
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class DevelopmentConfig(Config):
-    DEBUG = True 
-    SQLALCHEMY_ECHO = True
+    DEBUG = True
 
 class TestingConfig(Config):
     TESTING = True

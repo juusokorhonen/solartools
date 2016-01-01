@@ -5,8 +5,8 @@ from flask import Flask, url_for, render_template, abort, flash, redirect, sessi
 from flask_bootstrap import Bootstrap, StaticCDN, WebCDN
 from flask_appconfig import AppConfig
 from jinja2 import TemplateNotFound
-from app.errorhandler import register_errorhandlers
-from app.grapher import grapher
+from .errorhandler import register_errorhandlers
+from grapher import grapher
 from database.rediscon import rc
 
 def create_app(config=None, configfile=None):
@@ -39,7 +39,6 @@ def create_app(config=None, configfile=None):
     rc.init_app(app)
 
     # Add blueprints
-    #app.register_blueprint(grapher)
     app.register_blueprint(rest)
 
     # Add errorhandler
