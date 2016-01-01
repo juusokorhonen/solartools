@@ -7,3 +7,13 @@ pyserial
 pandas
 numpy
 pygal
+redis
+hiredis
+shortuuid
+wtforms
+Flask-WTF
+ephem
+ipython
+tzwhere
+tzlocal
+#unittest

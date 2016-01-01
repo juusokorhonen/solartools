@@ -2,11 +2,12 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 
 from flask import Flask, url_for, render_template, abort, flash, redirect, session, request, g, current_app
-from flask_bootstrap import Bootstrap
+from flask_bootstrap import Bootstrap, StaticCDN, WebCDN
 from flask_appconfig import AppConfig
 from jinja2 import TemplateNotFound
-from app.errorhandler import register_errorhandlers 
-from app.grapher import grapher 
+from app.errorhandler import register_errorhandlers
+from app.grapher import grapher
+from database.rediscon import rc
 
 def create_app(config=None, configfile=None):
     """
@@ -18,12 +19,13 @@ def create_app(config=None, configfile=None):
     :returns: Flask application
     """
     app = Flask(__name__)
-    
+
     # Configure app
-    AppConfig(app, default_settings=config, configfile=configfile) 
+    AppConfig(app, default_settings=config, configfile=configfile)
     Bootstrap(app) # Use flask-bootstrap
-    
-    # Development-specific functions 
+    app.config['BOOTSTRAP_SERVE_LOCAL'] = True
+
+    # Development-specific functions
     if (app.debug):
         pass
     # Testing-specifig functions
@@ -33,16 +35,15 @@ def create_app(config=None, configfile=None):
     if (app.config.get('PRODUCTION')):
         pass
 
+    # Initialize redis connection
+    rc.init_app(app)
+
     # Add blueprints
-    app.register_blueprint(grapher)
+    #app.register_blueprint(grapher)
+    app.register_blueprint(rest)
 
     # Add errorhandler
     register_errorhandlers(app)
-  
-    # Register menu
-    g[navmenu] = [
-            {'endpoint': 'index', 'name': 'Start'},
-            ]
 
     # Add frontpage
     @app.route('/')

@@ -78,7 +78,7 @@ code {
 		</div>
 		<div id="navbar" class="collapse navbar-collapse">
 			<ul class="nav navbar-nav">
-				{% for navitem in g.navmenu %}
+				{% for navitem in navmenu %}
 				<li class="{% if navitem.disabled %}disabled {% elif navitem.active %} active{% endif %}"><a href="{{ url_for(navitem.endpoint) }}">{{ navitem.name }}</a></li>
 				{% endfor %}
 			</ul>
