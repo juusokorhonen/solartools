@@ -6,7 +6,7 @@ from flask_bootstrap import Bootstrap, StaticCDN, WebCDN
 from flask_appconfig import AppConfig
 from jinja2 import TemplateNotFound
 from .errorhandler import register_errorhandlers
-from grapher import grapher
+from .rest import restapi, restapi_bp
 from database.rediscon import rc
 
 def create_app(config=None, configfile=None):
@@ -38,19 +38,11 @@ def create_app(config=None, configfile=None):
     # Initialize redis connection
     rc.init_app(app)
 
-    # Add blueprints
-    app.register_blueprint(rest)
+    # Add REST api
+    app.register_blueprint(restapi_bp)
 
     # Add errorhandler
     register_errorhandlers(app)
-
-    # Add frontpage
-    @app.route('/')
-    def index():
-        try:
-            return render_template('index.html')
-        except TemplateNotFound:
-            abort(404)
 
     return app
 
