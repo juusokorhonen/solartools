@@ -6,13 +6,16 @@ from flask_restful import Resource, Api, reqparse
 from jinja2 import TemplateNotFound
 import numpy as np
 import pygal
+from solarcalculator import SolarCalculator
 
 restapi_bp = Blueprint('restapi', __name__)
 restapi = Api(restapi_bp)
 
 class LocationCalculator(Resource):
     def get(self):
-        return {'lat': request.args['lat'], 'lon': request.args['lon']}
+        sc = SolarCalculator((request.args['lat'], request.args['lon']))
+        return sc.dict()
+
 
 restapi.add_resource(LocationCalculator, '/location')
 

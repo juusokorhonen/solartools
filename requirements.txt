@@ -11,3 +11,7 @@ shortuuid
 ephem
 tzwhere
 tzlocal
+simplejson
+Shapely
+geopy
+python-dateutil
