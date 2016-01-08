@@ -9,9 +9,10 @@ import tzlocal
 from tzwhere import tzwhere
 from datetime import datetime, timedelta
 import dateutil.parser
+import dateutil.tz
 
 # Set up a global tz (tzwhere) object
-tzw = tzwhere.tzwhere()
+#tzw = tzwhere.tzwhere()
 
 class SolarCalculator(object):
   _observer = None
@@ -23,13 +24,20 @@ class SolarCalculator(object):
   _sunset = None
   _sunrise = None
 
-  def __init__(self, coords, elevation=None, date=None):
+  def __init__(self, obs, elevation=None, date=None):
     """
     Give coords as tuple (lat, lon). If they are floats, radians are expected, and if they are strings then degrees are expected.
+    Observer can also be an ephem.Observer instance.
     """
     # Set up observer
-    self._observer = ephem.Observer()
-    self._observer.lat, self._observer.lon = coords
+    if (isinstance(obs, ephem.Observer)):
+      self._observer = obs
+    else:
+      self._observer = ephem.Observer()
+      try:
+        self._observer.lat, self._observer.lon = obs
+      except Exception as e:
+        raise AttributeError("Coord needs to be a ephem.Observer instance or a tuple of two floats")
 
     if (date is None):
       # If no date is given, use now
@@ -73,6 +81,7 @@ class SolarCalculator(object):
     if (self._observer is None):
       self._observer = ephem.Observer()
       self.__sun_needs_compute = True
+    #print("[DEBUG] self.observer='{}'".format(self._observer))
     return self._observer
 
   @observer.setter
@@ -97,12 +106,31 @@ class SolarCalculator(object):
       self.observer.lon = coords[1]
     except:
       raise TypeError("Coordinates could not be converted to ephem format.")
-    else:
-      self.__sun_needs_compute = True
-      self._noon = None
-      self._solarnoon = None
-      self._sunrise = None
-      self._sunset = None
+    self.__sun_needs_compute = True
+    self._noon = None
+    self._solarnoon = None
+    self._sunrise = None
+    self._sunset = None
+
+  @property
+  def date(self):
+    """
+    Returns the observer date in standard format.
+    """
+    return self.localized_date()
+
+  @date.setter
+  def date(self, val):
+    """
+    Sets the observer date.
+    """
+    self.observer.date = self.datetime_to_ephem(val)
+
+    self.__sun_needs_compute = True
+    self._noon = None
+    self._solarnoon = None
+    self._sunrise = None
+    self._sunset = None
 
   @property
   def geocoder(self):
@@ -119,13 +147,65 @@ class SolarCalculator(object):
     return self.geocoder.timezone
 
   def observer_solartime(self):
+    """
+    Returns the observer timezone as a datetime object.
+    """
+
+    #print("[DEBUG] self.observer.date='{}'".format(self.observer.date))
     hour_angle = self.observer.sidereal_time() - self.sun.ra
-    date_hrs = ephem.hours(hour_angle + ephem.hours(str('12:00'))).norm
+    date_hrs = ephem.hours(hour_angle + ephem.pi).norm
+    #print("[DEBUG] date_hrs='{}'".format(date_hrs))
     date_triple = self.observer.date.triple()
-    date_str = "{}/{}/{} {}".format(date_triple[0], date_triple[1], int(date_triple[2]), str(date_hrs))
-    print(date_str)
-    date_ephem = ephem.date(str(date_str))
-    return date_ephem
+    date_str = "{}/{}/{} {}0000".format(date_triple[0], date_triple[1], int(date_triple[2]), str(date_hrs))
+    #print("[DEBUG] date_str='{}'".format(date_str))
+    date_fmt = "%Y/%m/%d %H:%M:%S.%f"
+
+    # Create a naive datetime and a timezone offset
+    solardate_naive = datetime.strptime(date_str, date_fmt)
+    #print("[DEBUG] solardate_naive='{}'".format(solardate_naive))
+    solar_tz = self.local_timezone(solardate_naive, self.localized_date(tz=pytz.utc))
+    #print("[DEBUG] solar_tz='{}'".format(solar_tz))
+
+    # Attach timezone to the datetime object
+    solardate = solardate_naive.replace(tzinfo=solar_tz)
+    #print("[DEBUG] solardate='{}'".format(solardate))
+
+
+    """
+    date_utc = self.localized_date(tz=pytz.utc)
+    longitude = self.observer.lon
+    date_naive = date_utc.replace(tzinfo=None)
+    solardate_naive = date_naive + timedelta(hours=longitude/np.pi*12)
+    td = solardate_naive - date_naive
+    tz = dateutil.tz.tzoffset(None, 60*np.round(td.seconds/60.0))
+    solardate = solardate_naive.replace(tzinfo=tz)
+    """
+
+    return solardate
+
+  @staticmethod
+  def local_timezone(solartime, utc_time):
+    """
+    Returns the true timezone of the observer.
+    utc_time has to be in utc timezone (no conversion is made here!)
+    solartime does not need a timezone
+    """
+    # Strip dates to naive datetime objects, to rid of time zone conversion (which we obviously do not want)
+    utc_naive = utc_time.replace(tzinfo=None)
+    #print("[DEBUG] utc_naive='{}'".format(utc_naive))
+    solar_naive = solartime.replace(tzinfo=None)
+    #print("[DEBUG] solar_naive='{}'".format(solar_naive))
+
+    td = solar_naive - utc_naive
+
+    #print("[DEBUG] td='{}'".format(td))
+    seconds = td.total_seconds()
+    minutes = np.round(seconds/60.0)
+    #print("[DEBUG] minutes='{}'".format(minutes))
+
+    tz = dateutil.tz.tzoffset(None, 60*minutes)
+
+    return tz
 
   @property
   def sunrise(self):
@@ -167,6 +247,20 @@ class SolarCalculator(object):
     return self._solarnoon
 
   @property
+  def solartime(self):
+    """
+    Returns the current solar time of the observer.
+    """
+    return self.observer_solartime()
+
+  @property
+  def timezone(self):
+    """
+    Returns the observer timezone.
+    """
+    return self.observer_timezone()
+
+  @property
   def noon(self):
     """
     Returns noon on the given date as an ephem date.
@@ -193,9 +287,9 @@ class SolarCalculator(object):
   @property
   def day_length(self):
     """
-    Returns the length of the given day.
+    Returns the length of the given day as a timedelta object.
     """
-    return ephem.hours(self.sunset - self.sunrise)
+    return self.localized_date(date=self.sunset) - self.localized_date(date=self.sunrise)
 
   def dict(self):
     """
@@ -208,13 +302,15 @@ class SolarCalculator(object):
           'lat': str(self.observer.lat),
           'lon': str(self.observer.lon),
           'elevation': str(self.observer.elevation),
-          'date': str(self.localize_date(self.observer.date, tz)),
+          'date': str(self.date),
           'timezone': str(tz),
-          'solartime': str(self.localize_date(self.observer_solartime(), tz)),
-          'sunrise': str(self.localize_date(self.sunrise, tz)),
-          'sunset': str(self.localize_date(self.sunset, tz)),
-          'noon': str(self.localize_date(self.noon, pytz.utc)),
-          'solarnoon': str(self.localize_date(self.solarnoon, tz)),
+          'solartime': str(self.localized_date(date=self.observer_solartime())),
+          },
+        'stats': {
+          'sunrise': str(self.localized_date(date=self.sunrise)),
+          'sunset': str(self.localized_date(date=self.sunset)),
+          'noon': str(self.localized_date(date=self.noon, tz=pytz.utc)),
+          'solarnoon': str(self.localized_date(date=self.solarnoon)),
           'daylength': str(self.day_length),
           },
         'sun': {
@@ -226,29 +322,34 @@ class SolarCalculator(object):
     }
     return json_obj
 
-  @staticmethod
-  def localize_date(date_obj, tz):
+  def localized_date(self, tz=None, date=None):
     """
     This method returns the given date in the timezone of the observer. Ie. not the timezone of the server.
     """
-    if (isinstance(date_obj, ephem.Date)):
+    if date is None:
+      date = self.observer.date
+    if tz is None:
+      tz = self.timezone
+
+    if (isinstance(date, ephem.Date)):
       # Ephem dates are always in UTC
-      date_utc = date_obj.datetime() # in UTC
+      date_naive = date.datetime() # in UTC
+      date_utc = pytz.utc.localize(date_naive)
       # Localized datetime
-      date_local = tz.localize(date_utc)
-    elif (isinstance(date_obj, datetime)):
-      # The given date_obj is already a datetime
-      if (date_obj.tzinfo is None):
+      date_local = date_utc.astimezone(tz)
+    elif (isinstance(date, datetime)):
+      # The given date is already a datetime
+      if (date.tzinfo is None):
         # There is no timezone information, so add it
-        date_utc = date_obj
-        date_local = tz.localize(date_utc)
+        date_utc = pytz.utc.localize(date)
+        date_local = date_utc.astimezone(tz)
       else:
         # There is already a timezone information, but it might not be correct
         try:
-          date_local = date_obj.astimezone(tz)
-        except Excption as e:
+          date_local = date.astimezone(tz)
+        except Exception as e:
           # Could not convert to timezone, so let's just assume it is UTC
-          date_naive = date_obj.replace(tzinfo=None)
+          date_naive = date.replace(tzinfo=None)
           date_utc = pytz.utc.localize(date_naive)
           date_local = date_utc.astimezone(tz)
     else:
@@ -286,16 +387,101 @@ class SolarCalculator(object):
       raise AttributeError("dt does not appear to be a valid datetime object.")
     return dt
 
+  @staticmethod
+  def datetime_to_ephem(dt):
+    """
+    Returns a non-localized version of a datetime object as an ephem date.
+    Initializing an ephem.Date directly from a localized datetime results in an error, because the timezone does not get converted properly.
+    """
+    if (isinstance(dt, ephem.Date)):
+      return dt
+    if (not isinstance(dt, datetime)):
+      raise TypeError("Not a datetime (or ephem.Date) object")
+
+    if (dt.tzinfo is None):
+      # This is a naive datetime, so we assume its already in UTC
+      return ephem.Date(dt)
+    else:
+      # We have timezone information
+      dt_utc = dt.astimezone(pytz.utc)
+      return ephem.Date(dt_utc)
+
+
+class SolarStats(object):
+  """
+  A class that creates solar stats.
+  """
+  _solarcalculator = None
+
+  def __init__(self, solarcalculator):
+    self.solarcalculator = solarcalculator
+
+  @property
+  def solarcalculator(self):
+    return self._solarcalculator
+
+  @solarcalculator.setter
+  def solarcalculator(self, solarcalculator):
+    if (not isinstance(solarcalculator, SolarCalculator)):
+      raise TypeError("Not a SolarCalculator instance.")
+    self._solarcalculator = solarcalculator
+
+  def days_in_year(self):
+    """
+    Iterates over all the days in the given year, starting from 1.1. and ending in 31.12.
+    """
+    tz = self.solarcalculator.timezone
+    orig_date = self.solarcalculator.date
+    one_day = timedelta(1,0)
+    dt = tz.localize(datetime(orig_date.year, 1, 1, 12, 0, 0, 0))
+    while (dt.year == orig_date.year):
+      yield dt
+      # Increase by one day
+      dt = dt + one_day
+
+  def daily_stats(self):
+    """
+    Iterates over all days in the given year and returns stats as a dict.
+    """
+    sc = self.solarcalculator
+    tz = sc.timezone
+    obs = sc.observer
+
+    stats = {
+        'days': [],
+        }
+
+    day_number = 0
+    for day in self.days_in_year():
+      sc.date = sc.datetime_to_ephem(day)
+      day_stats = sc.dict()
+      # Append day number to stats
+      day_stats.update({'daynumber': str(day_number)})
+      # Observer information is not needed for every day
+      observer_info = day_stats.pop('observer')
+      observer_info.pop('date')
+      observer_info.pop('solartime')
+      observer_info.update({'year': day.year})
+      sun_info = day_stats.pop('sun')
+      if (day_number == 0):
+        # Add observer info to parent level
+        stats['observer'] = observer_info
+      stats['days'].append(day_stats)
+      day_number += 1
+
+    return stats
+
 class GeoCoder(object):
   """
   This class abstracts coordinate geocoding and also provides timezone information based on coordinates.
   """
-  _geolocator = None
+  _geolocator = tzwhere.tzwhere()
   _coords = None
   _timezone = None
 
   def __init__(self):
-    self._geolocator = tzw
+    # self._geolocator = tzw
+    pass
 
   @property
   def coords(self):

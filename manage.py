@@ -17,5 +17,21 @@ manager.add_command("runserver", Server(
     host = app.config.get('HOST', '0.0.0.0'))
     )
 
+@manager.command
+def runtests():
+    print("Testing solarcalculator package.")
+    from tests import solarcalculator_test
+    solarcalculator_test()
+    print("Test finished.")
+
+    print()
+    print("Testing solarstats class.")
+    from tests import solarstats_test
+    solarstats_test()
+    print("Test finished.")
+
+    print()
+    print("All tests finished.")
+
 if __name__ == '__main__':
     manager.run()
