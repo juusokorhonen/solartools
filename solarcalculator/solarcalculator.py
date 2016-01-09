@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function, unicode_liter
 
 import numpy as np
 import ephem
+import ephem.cities
 import simplejson as json
 import pytz
 import tzlocal
@@ -16,7 +17,7 @@ import dateutil.tz
 
 class SolarCalculator(object):
   _observer = None
-  _sun = None
+  __sun = None
   __sun_needs_compute = True
   _geocoder = None
   _noon = None
@@ -49,7 +50,7 @@ class SolarCalculator(object):
       self._obsever.elevation = elevation
 
     # Set up sun
-    self._sun = ephem.Sun()
+    #self.__sun = ephem.Sun()
 
     # Set a flag to recompute sun
     self.__sun_needs_compute = True
@@ -57,20 +58,29 @@ class SolarCalculator(object):
   @property
   def sun(self):
     # Lazy instantiation
-    if (self._sun is None):
-      self._sun = ephem.Sun()
+    if (self.__sun is None):
+      self.__sun = ephem.Sun()
       self.__sun_needs_compute = True
+      #print("[DEBUG] sun lazy instantiation")
 
     if (self.__sun_needs_compute):
-      self._sun.compute(self.observer)
+      self.__sun.compute(self.observer)
       self.__sun_needs_compute = False
+      #print("[DEBUG] sun compute")
 
-    return self._sun
+    #print("[DEBUG] #### sun = {} ####".format(self.__sun))
+    #print("[DEBUG] sun.ra={}".format(self.__sun.ra))
+    #print("[DEBUG] sun.dec={}".format(self.__sun.dec))
+    #print("[DEBUG] sun.alt={}".format(self.__sun.alt))
+    #print("[DEBUG] sun.az={}".format(self.__sun.az))
+
+    return self.__sun
 
   @sun.setter
   def sun(self, val):
+    #print("[DEBUG] Setting sun")
     if (isinstance(val, ephem.Body)):
-      self._sun = val
+      self.__sun = val
       self.__sun_needs_compute = True
     else:
       raise TypeError("Sun needs to be a ephem.Body instance")
@@ -152,11 +162,13 @@ class SolarCalculator(object):
     """
 
     #print("[DEBUG] self.observer.date='{}'".format(self.observer.date))
+    #print("[DEBUG] running observer_solartime, self.sun.az={}".format(self.sun.az))
     hour_angle = self.observer.sidereal_time() - self.sun.ra
+    #print("[DEBUG] self.sun.az={}".format(self.sun.az))
     date_hrs = ephem.hours(hour_angle + ephem.pi).norm
     #print("[DEBUG] date_hrs='{}'".format(date_hrs))
-    date_triple = self.observer.date.triple()
-    date_str = "{}/{}/{} {}0000".format(date_triple[0], date_triple[1], int(date_triple[2]), str(date_hrs))
+    date = self.date
+    date_str = "{}/{}/{} {}0000".format(date.year, date.month, date.day, str(date_hrs))
     #print("[DEBUG] date_str='{}'".format(date_str))
     date_fmt = "%Y/%m/%d %H:%M:%S.%f"
 
@@ -181,7 +193,7 @@ class SolarCalculator(object):
     solardate = solardate_naive.replace(tzinfo=tz)
     """
 
-    return solardate
+    return self.round_datetime(solardate)
 
   @staticmethod
   def local_timezone(solartime, utc_time):
@@ -190,6 +202,7 @@ class SolarCalculator(object):
     utc_time has to be in utc timezone (no conversion is made here!)
     solartime does not need a timezone
     """
+    #print("[DEBUG] local_timezone()")
     # Strip dates to naive datetime objects, to rid of time zone conversion (which we obviously do not want)
     utc_naive = utc_time.replace(tzinfo=None)
     #print("[DEBUG] utc_naive='{}'".format(utc_naive))
@@ -209,41 +222,49 @@ class SolarCalculator(object):
 
   @property
   def sunrise(self):
+    #print("[DEBUG] sunrise()")
     if (self._sunrise is not None):
       return self._sunrise
 
     try:
-      self._sunrise = self.observer.previous_rising(self.sun, start=self.noon)
-    except Exception as e:
-      print(str(e))
-      pass
+      # Look out! Dirty fix ahead!
+      sun = ephem.Sun()
+      sun.compute(self.observer)
+      self._sunrise = self.observer.previous_rising(sun, start=self.noon)
+    except ephem.NeverUpError as e:
+      self._sunrise = self.date.replace(hours=24, minutes=00, seconds=00, microseconds=00)
+    except ephem.AlwaysUpError as e:
+      self._sunrise = self.date.replace(hours=00, minutes=00, seconds=00, microseconds=00)
 
     return self._sunrise
 
   @property
   def sunset(self):
+    #print("[DEBUG] sunset()")
     if (self._sunset is not None):
       return self._sunset
 
     try:
-      self._sunset = self.observer.next_setting(self.sun, start=self.noon)
-    except Exception as e:
-      print(str(e))
-      pass
+      # Dirty fix for an essentially a pyephem API problem (do not modify passed values in function!)
+      sun = ephem.Sun()
+      sun.compute(self.observer)
+      self._sunset = self.observer.next_setting(sun, start=self.noon)
+    except ephem.AlwaysUpError as e:
+      self._sunset = self.date.replace(hours=24, minutes=00, seconds=00, microseconds=00)
 
     return self._sunset
 
   @property
   def solarnoon(self):
+    #print("[DEBUG] solarnoon")
     if (self._solarnoon is not None):
       return self._solarnoon
 
-    try:
-      self._solarnoon = self.observer.next_transit(self.sun, start=self.sunrise)
-    except Exception as e:
-      print(str(e))
-      pass
-
+    # Whoa, whoa, whoa! next_transit(sun) modifies sun!! WTF!?!
+    # FIX: copy the sun and pass it to the next_transit method
+    sun = ephem.Sun()
+    sun.compute(self.observer)
+    self._solarnoon = self.observer.next_transit(sun, start=self.sunrise)
     return self._solarnoon
 
   @property
@@ -265,22 +286,22 @@ class SolarCalculator(object):
     """
     Returns noon on the given date as an ephem date.
     """
+    #print("[DEBUG] noon()")
+    #print("sun.az={}".format(self.sun.az))
     if (self._noon is not None):
       return self._noon
 
-    dt = ephem.localtime(self.observer.date)
-    # Get timezone
-    tz = self.observer_timezone()
-    # Get timedelta from UTC
-    td = tz.utcoffset(dt)
+    # Get localized date (as local timezone)
+    dt_local = self.date
     # Set time to noon (local time)
-    dt = dt.replace(hour=12, minute=0, second=0, microsecond=0)
+    dt_local_noon = dt_local.replace(hour=12, minute=0, second=0, microsecond=0)
     # Convert time to UTC
-    dt = dt-td
+    dt_utc = dt_local_noon.astimezone(pytz.utc)
+    dt_naive = dt_utc.replace(tzinfo=None)
     # Convert to ephem date
-    date = ephem.Date(dt)
-    # Save noon
-    self._noon = date
+    self._noon = ephem.Date(dt_naive)
+
+    #print("sun.az={}".format(self.sun.az))
 
     return self._noon
 
@@ -289,12 +310,21 @@ class SolarCalculator(object):
     """
     Returns the length of the given day as a timedelta object.
     """
+    #print("[DEBUG] day_length()")
     return self.localized_date(date=self.sunset) - self.localized_date(date=self.sunrise)
+
+  def force_compute(self):
+    """
+    Forces sun to compute against the observer. Should be called if observer was changed manually.
+    """
+    self.sun.compute(self.observer)
+    self.__sun_needs_compute = False
 
   def dict(self):
     """
     This method returns the current state of the object as dict.
     """
+    self.force_compute()
     tz = self.observer_timezone()
 
     json_obj = {
@@ -302,15 +332,15 @@ class SolarCalculator(object):
           'lat': str(self.observer.lat),
           'lon': str(self.observer.lon),
           'elevation': str(self.observer.elevation),
-          'date': str(self.date),
+          'date': self.stringify(self.date),
           'timezone': str(tz),
-          'solartime': str(self.localized_date(date=self.observer_solartime())),
+          'solartime': self.stringify(self.solartime),
           },
         'stats': {
-          'sunrise': str(self.localized_date(date=self.sunrise)),
-          'sunset': str(self.localized_date(date=self.sunset)),
-          'noon': str(self.localized_date(date=self.noon, tz=pytz.utc)),
-          'solarnoon': str(self.localized_date(date=self.solarnoon)),
+          'sunrise': self.stringify(self.localized_date(date=self.sunrise)),
+          'sunset': self.stringify(self.localized_date(date=self.sunset)),
+          'noon': self.stringify(self.localized_date(date=self.noon, tz=pytz.utc)),
+          'solarnoon': self.stringify(self.localized_date(date=self.solarnoon)),
           'daylength': str(self.day_length),
           },
         'sun': {
@@ -362,12 +392,12 @@ class SolarCalculator(object):
     return date_local
 
   @staticmethod
-  def datetime_to_string(dt):
+  def stringify(dt):
     """
     Converts a localized datetime object to a string.
     """
     try:
-      return dt.isoformat()
+      return str(dt.isoformat())
     except Exception as e:
       raise TypeError("Provided date is not a datetime object.")
 
@@ -406,6 +436,25 @@ class SolarCalculator(object):
       dt_utc = dt.astimezone(pytz.utc)
       return ephem.Date(dt_utc)
 
+  @staticmethod
+  def cities():
+    """
+    Returns a list of cities (with lat, lon, and elev), that the parser is able to understand.
+    """
+    city_data = ephem.cities._city_data
+    city_arr = [{'name': city, 'lat': str(city_data[city][0]), 'lon': str(city_data[city][1]), 'elev': str(city_data[city][2])} for city in city_data]
+    return city_arr
+
+  @staticmethod
+  def get_observer_from_city(city):
+    """
+    Returns an ephem.Observer that corresponds to the given city name.
+    """
+    try:
+      obs = ephem.city(city)
+    except Exception as e:
+      raise AttributeError('City, {}, could not be found in database.'.format(city))
+    return obs
 
 class SolarStats(object):
   """

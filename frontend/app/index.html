@@ -1,43 +1,99 @@
 <!DOCTYPE html>
-<!--[if lt IE 7]>      <html lang="en" ng-app="myApp" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>         <html lang="en" ng-app="myApp" class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>         <html lang="en" ng-app="myApp" class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]><!--> <html lang="en" ng-app="myApp" class="no-js"> <!--<![endif]-->
+<!--[if lt IE 7]>      <html lang="en" ng-app="solarCalc" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html lang="en" ng-app="solarCalc" class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html lang="en" ng-app="solarCalc" class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html lang="en" ng-app="solarCalc" class="no-js"> <!--<![endif]-->
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>My AngularJS App</title>
+  <title>Solar Calculator</title>
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="bower_components/html5-boilerplate/dist/css/normalize.css">
   <link rel="stylesheet" href="bower_components/html5-boilerplate/dist/css/main.css">
+  <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">
   <link rel="stylesheet" href="app.css">
   <script src="bower_components/html5-boilerplate/dist/js/vendor/modernizr-2.8.3.min.js"></script>
 </head>
-<body>
-  <ul class="menu">
-    <li><a href="#/view1">view1</a></li>
-    <li><a href="#/view2">view2</a></li>
-  </ul>
+<body ng-controller="CalcController as calcCtrl">
 
-  <!--[if lt IE 7]>
-      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-  <![endif]-->
+  <div class="container-fluid">
 
-  <div ng-view></div>
+    <!--[if lt IE 7]>
+        <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
 
-  <div>Angular seed app: v<span app-version></span></div>
+    <div class="row">
+      <div class="col-md-4">
+        <img src="static/img/sundial.jpg" class="img-responsive">
+      </div>
+
+      <div class="col-md-4">
+        <h2 class="sub-header">Solar Calculator</h2>
+        <h3>Select location</h3>
+        <form name="locationForm" ng-controller="LocationFormController as formCtrl" ng-submit="calcCtrl.fetchCity(formCtrl.city)" novalidate>
+          <select ng-model="formCtrl.city" required>
+            <option ng-repeat="city in formCtrl.cities.cities | orderBy:'name'" value="{{city.name}}">{{city.name}}</option>
+          </select>
+          <input type="submit" value="Submit" />
+        </form>
+      </div>
+    </div>
+
+    <div class="row">
+      
+      <div ng-show="calcCtrl.location_info">
+        <div class="col-md-4">
+          <h3>Location information</h3>
+          <dl class="dl-horizontal">
+            <dt>Latitude</dt><dd>{{ calcCtrl.location_info.observer.lat | coordLat }}</dd>
+            <dt>Longitude</dt><dd>{{ calcCtrl.location_info.observer.lon | coordLon }}</dd>
+            <dt>Elevation</dt><dd>{{ calcCtrl.location_info.observer.elevation | round }} m</dd>
+            <dt>Timezone</dt><dd>{{ calcCtrl.location_info.observer.timezone }}</dd>
+            <dt>Date</dt><dd>{{ calcCtrl.location_info.observer.date | isodate}}</dd>
+            <dt>Local solar date</dt><dd>{{ calcCtrl.location_info.observer.solartime | isodate }}</dd>
+          </dl>
+        </div>
+        <div class="col-md-4">
+          <h3>Current sun position</h3>
+          <dl class="dl-horizontal">
+            <h4>Apparent topocentric position</h4>
+            <dt>Right ascension</dt><dd>{{ calcCtrl.location_info.sun.ra | hourangle }}</dd>
+            <dt>Declination</dt><dd>{{ calcCtrl.location_info.sun.dec | degree }}</dd>
+            <h4>Position relative to horizon</h4>
+            <dt>Azimuth east of north</dt><dd>{{ calcCtrl.location_info.sun.az | degree }}</dd>
+            <dt>Altitude above horizon</dt><dd>{{ calcCtrl.location_info.sun.alt | degree }}</dd>
+          </dl>
+        </div>
+        <div class="col-md-4">
+          <h3>Sun statistics for today</h3>
+          <dl class="dl-horizontal">
+            <dt>Noon (in GMT)</dt><dd>{{ calcCtrl.location_info.stats.noon | isodate }}</dd>
+            <dt>Solarnoon</dt><dd>{{ calcCtrl.location_info.stats.solarnoon | isodate }}</dd>
+            <dt>Sunrise</dt><dd>{{ calcCtrl.location_info.stats.sunrise | isodate }}</dd>
+            <dt>Sunset</dt><dd>{{ calcCtrl.location_info.stats.sunset | isodate }}</dd>
+            <dt>Day length</dt><dd>{{ calcCtrl.location_info.stats.daylength | hours }}</dd>
+          </dl>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <div class="container-fluid">
+      <p class="text-muted">Solar Calculator: v<span>0.0.1</span></p>
+    </div>
+  </footer>
 
   <!-- In production use:
   <script src="//ajax.googleapis.com/ajax/libs/angularjs/x.x.x/angular.min.js"></script>
   -->
   <script src="bower_components/angular/angular.js"></script>
   <script src="bower_components/angular-route/angular-route.js"></script>
+  <script src="bower_components/jquery/dist/jquery.js"></script>
+  <script src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
   <script src="app.js"></script>
-  <script src="view1/view1.js"></script>
-  <script src="view2/view2.js"></script>
-  <script src="components/version/version.js"></script>
-  <script src="components/version/version-directive.js"></script>
-  <script src="components/version/interpolate-filter.js"></script>
 </body>
 </html>

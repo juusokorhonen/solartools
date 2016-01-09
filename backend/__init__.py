@@ -4,6 +4,7 @@ from __future__ import (absolute_import, division, print_function, unicode_liter
 from flask import Flask, url_for, render_template, abort, flash, redirect, session, request, g, current_app
 from flask_bootstrap import Bootstrap, StaticCDN, WebCDN
 from flask_appconfig import AppConfig
+from flask.ext.cors import CORS
 from jinja2 import TemplateNotFound
 from .errorhandler import register_errorhandlers
 from .rest import restapi, restapi_bp
@@ -24,6 +25,9 @@ def create_app(config=None, configfile=None):
     AppConfig(app, default_settings=config, configfile=configfile)
     Bootstrap(app) # Use flask-bootstrap
     app.config['BOOTSTRAP_SERVE_LOCAL'] = True
+
+    # Set up CORS
+    CORS(app)
 
     # Development-specific functions
     if (app.debug):

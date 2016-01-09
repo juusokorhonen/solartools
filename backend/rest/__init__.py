@@ -14,22 +14,42 @@ restapi = Api(restapi_bp)
 class LocationCalculator(Resource):
     def get(self):
       try:
-        sc = SolarCalculator((request.args['lat'], request.args['lon']))
+        if (request.args.get('city')):
+          obs = SolarCalculator.get_observer_from_city(request.args['city'])
+          sc = SolarCalculator(obs)
+        elif (request.args.get('elev')):
+          sc = SolarCalculator((request.args['lat'], request.args['lon']), elev=request.args['elev'])
+        else:
+          sc = SolarCalculator((request.args['lat'], request.args['lon']))
       except Exception as e:
+        print("Encountered error: {}".format(e))
         abort(400)
       return sc.dict()
 
 class StatsCalculator(Resource):
     def get(self):
       try:
-        sc = SolarCalculator((request.args['lat'], request.args['lon']))
+        if (request.args.get('city')):
+          obs = SolarCalculator.get_observer_from_city(request.args['city'])
+          sc = SolarCalculator(obs)
+        elif (request.args.get('elev')):
+          sc = SolarCalculator((request.args['lat'], request.args['lon']), elev=request.args['elev'])
+        else:
+          sc = SolarCalculator((request.args['lat'], request.args['lon']))
         st = SolarStats(sc)
       except Exception as e:
-        print("Exception! {}".format(e))
         abort(400)
       return st.daily_stats()
 
+class Cities(Resource):
+  def get(self):
+    try:
+      city_arr = SolarCalculator.cities()
+    except Exception as e:
+      print("Exception! {}".format(e))
+      abort(400)
+    return {'cities': city_arr}
 
 restapi.add_resource(LocationCalculator, '/location')
 restapi.add_resource(StatsCalculator, '/stats')
-
+restapi.add_resource(Cities, '/cities')
