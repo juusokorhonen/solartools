@@ -213,8 +213,17 @@ class SolarCalculator(object):
 
     #print("[DEBUG] td='{}'".format(td))
     seconds = td.total_seconds()
+    # Make sure that -24 < td < 24 hrs
+    while (seconds > 24*60*60):
+      seconds -= 24*60*60
+    while (seconds < -24*60*60):
+      seconds += 24*60*60
+
     minutes = np.round(seconds/60.0)
     #print("[DEBUG] minutes='{}'".format(minutes))
+
+
+
 
     tz = dateutil.tz.tzoffset(None, 60*minutes)
 
@@ -399,7 +408,7 @@ class SolarCalculator(object):
     try:
       return str(dt.isoformat())
     except Exception as e:
-      raise TypeError("Provided date is not a datetime object.")
+      raise TypeError("Provided date is not a datetime object ({}): {}".format(type(dt), e))
 
   @staticmethod
   def round_datetime(dt):

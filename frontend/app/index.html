@@ -23,67 +23,111 @@
         <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
     <![endif]-->
 
-    <div class="row">
-      <div class="col-md-4">
-        <img src="static/img/sundial.jpg" class="img-responsive">
-      </div>
+    <section>
+      <div class="row">
+        <div class="col-md-4">
+          <img src="static/img/sundial.jpg" class="img-responsive">
+        </div>
 
-      <div class="col-md-4">
-        <h2 class="sub-header">Solar Calculator</h2>
-        <h3>Select location</h3>
-        <form name="locationForm" ng-controller="LocationFormController as formCtrl" ng-submit="calcCtrl.fetchCity(formCtrl.city)" novalidate>
-          <select ng-model="formCtrl.city" required>
-            <option ng-repeat="city in formCtrl.cities.cities | orderBy:'name'" value="{{city.name}}">{{city.name}}</option>
-          </select>
-          <input type="submit" value="Submit" />
-        </form>
+        <div class="col-md-8">
+          <h2 class="sub-header">Solar Calculator</h2>
+          <h3>Select location</h3>
+          <form name="locationForm" ng-controller="LocationFormController as formCtrl" ng-submit="calcCtrl.fetchCity(formCtrl.city)" novalidate>
+            <select ng-model="formCtrl.city" required>
+              <option ng-repeat="city in formCtrl.cities.cities | orderBy:'name'" value="{{city.name}}">{{city.name}}</option>
+            </select>
+            <input type="submit" value="Submit" />
+          </form>
+
+          <div ng-show="calcCtrl.location_info">
+            Quick stats
+          </div>
+
+        </div><!-- col /-->
+      </div><!-- row /-->
+    </section>
+
+    <div class="row">
+      <div class="col-md-8 col-md-offset-2">
+        Quick stats
       </div>
     </div>
 
-    <div class="row">
+    <section ng-show="calcCtrl.location_info" ng-init="tab = 'locinfo'">
+      <ul class="nav nav-pills">
+        <li><a href ng-click="tab = 'locinfo'">Location information</a></li>
+        <li><a href ng-click="tab = 'suntoday'">Current sun position</a></li>
+        <li><a href ng-click="tab = 'statstoday'">Sun statistics today</a></li>
+        <li><a href ng-click="tab = 'statsyear'">Year stats</a></li>
+      </ul>
       
-      <div ng-show="calcCtrl.location_info">
-        <div class="col-md-4">
-          <h3>Location information</h3>
-          <dl class="dl-horizontal">
-            <dt>Latitude</dt><dd>{{ calcCtrl.location_info.observer.lat | coordLat }}</dd>
-            <dt>Longitude</dt><dd>{{ calcCtrl.location_info.observer.lon | coordLon }}</dd>
-            <dt>Elevation</dt><dd>{{ calcCtrl.location_info.observer.elevation | round }} m</dd>
-            <dt>Timezone</dt><dd>{{ calcCtrl.location_info.observer.timezone }}</dd>
-            <dt>Date</dt><dd>{{ calcCtrl.location_info.observer.date | isodate}}</dd>
-            <dt>Local solar date</dt><dd>{{ calcCtrl.location_info.observer.solartime | isodate }}</dd>
-          </dl>
-        </div>
-        <div class="col-md-4">
-          <h3>Current sun position</h3>
-          <dl class="dl-horizontal">
-            <h4>Apparent topocentric position</h4>
-            <dt>Right ascension</dt><dd>{{ calcCtrl.location_info.sun.ra | hourangle }}</dd>
-            <dt>Declination</dt><dd>{{ calcCtrl.location_info.sun.dec | degree }}</dd>
-            <h4>Position relative to horizon</h4>
-            <dt>Azimuth east of north</dt><dd>{{ calcCtrl.location_info.sun.az | degree }}</dd>
-            <dt>Altitude above horizon</dt><dd>{{ calcCtrl.location_info.sun.alt | degree }}</dd>
-          </dl>
-        </div>
-        <div class="col-md-4">
-          <h3>Sun statistics for today</h3>
-          <dl class="dl-horizontal">
-            <dt>Noon (in GMT)</dt><dd>{{ calcCtrl.location_info.stats.noon | isodate }}</dd>
-            <dt>Solarnoon</dt><dd>{{ calcCtrl.location_info.stats.solarnoon | isodate }}</dd>
-            <dt>Sunrise</dt><dd>{{ calcCtrl.location_info.stats.sunrise | isodate }}</dd>
-            <dt>Sunset</dt><dd>{{ calcCtrl.location_info.stats.sunset | isodate }}</dd>
-            <dt>Day length</dt><dd>{{ calcCtrl.location_info.stats.daylength | hours }}</dd>
-          </dl>
-        </div>
-      </div>
+      <div class="panel" ng-show="tab === 'locinfo'">
+        <h3>Location information</h3>
+        <dl class="dl-horizontal">
+          <dt>Latitude</dt><dd>{{ calcCtrl.location_info.observer.lat | coordLat }}</dd>
+          <dt>Longitude</dt><dd>{{ calcCtrl.location_info.observer.lon | coordLon }}</dd>
+          <dt>Elevation</dt><dd>{{ calcCtrl.location_info.observer.elevation | round }} m</dd>
+          <dt>Timezone</dt><dd>{{ calcCtrl.location_info.observer.timezone }}</dd>
+          <dt>Date</dt><dd>{{ calcCtrl.location_info.observer.date | isodate}}</dd>
+          <dt>Local solar date</dt><dd>{{ calcCtrl.location_info.observer.solartime | isodate }}</dd>
+        </dl>
+      </div><!-- panel /-->
 
-    </div>
+      <div class="panel" ng-show="tab === 'suntoday'">
+        <h3>Current sun position</h3>
+        <dl class="dl-horizontal">
+          <h4>Apparent topocentric position</h4>
+          <dt>Right ascension</dt><dd>{{ calcCtrl.location_info.sun.ra | hourangle }}</dd>
+          <dt>Declination</dt><dd>{{ calcCtrl.location_info.sun.dec | degree }}</dd>
+          <h4>Position relative to horizon</h4>
+          <dt>Azimuth east of north</dt><dd>{{ calcCtrl.location_info.sun.az | degree }}</dd>
+          <dt>Altitude above horizon</dt><dd>{{ calcCtrl.location_info.sun.alt | degree }}</dd>
+        </dl>
+      </div><!-- panel /-->
+
+      <div class="panel" ng-show="tab === 'statstoday'">
+        <h3>Sun statistics for today</h3>
+        <dl class="dl-horizontal">
+          <dt>Noon (in GMT)</dt><dd>{{ calcCtrl.location_info.stats.noon | isodate }}</dd>
+          <dt>Solarnoon</dt><dd>{{ calcCtrl.location_info.stats.solarnoon | isodate }}</dd>
+          <dt>Sunrise</dt><dd>{{ calcCtrl.location_info.stats.sunrise | isodate }}</dd>
+          <dt>Sunset</dt><dd>{{ calcCtrl.location_info.stats.sunset | isodate }}</dd>
+          <dt>Day length</dt><dd>{{ calcCtrl.location_info.stats.daylength | hours }}</dd>
+        </dl>
+      </div><!-- panel /-->
+
+      <div class="panel" ng-show="tab === 'statsyear'">
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Day #</th>
+                <th>Sunrise</th>
+                <th>Solar noon</th>
+                <th>Sunset</th>
+                <th>Day length</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr ng-repeat="day in calcCtrl.stats.days">
+                <td>{{ day.daynumber }}</td>
+                <td>{{ day.stats.sunrise | isodate:'short' }}</td>
+                <td>{{ day.stats.solarnoon | isodate:'short' }}</td>
+                <td>{{ day.stats.sunset | isodate:'short' }}</td>
+                <td>{{ day.stats.daylength | hours:'short' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div><!-- table responsive /-->
+      </div><!-- panel /-->
+
+    </section>
 
   </div>
 
   <footer class="footer">
     <div class="container-fluid">
-      <p class="text-muted">Solar Calculator: v<span>0.0.1</span></p>
+      <p class="text-muted">Solar Calculator: v<span>0.0.1</span>. &copy; Juuso Korhonen 2016.</p>
     </div>
   </footer>
 

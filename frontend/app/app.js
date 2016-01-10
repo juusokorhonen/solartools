@@ -7,6 +7,7 @@
     var coordFormat = '$1$2°$3′$4″';
     var iso8601RegExp = /(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})([+-])(\d{2})\:(\d{2})/;
     var dateFormat =  '$3.$2.$1 $4:$5:$6 (UTC$7$8:$9)';
+    var dateFormatShort = '$4:$5:$5';
     var degreeRegExp = /(\-?\d{1,2})\:(\d{1,2})\:(\d{1,2}\.\d)/;
     var hourAngleRegExp = /(\-?\d{1,2})\:(\d{1,2})\:(\d{1,2}\.\d)/;
     var hourRegExp = /(\-?\d{1,2})\:(\d{1,2})\:(\d{1,2})/;
@@ -44,9 +45,14 @@
     });
 
     app.filter('isodate', function() {
-      return function(input) {
+      return function(input, format) {
         if (input === undefined) return;
-        input = input.replace(iso8601RegExp, dateFormat);
+        if (format === 'short') {
+          input = input.replace(iso8601RegExp, dateFormatShort);
+        }
+        else {
+          input = input.replace(iso8601RegExp, dateFormat);
+        }
         return input;
       };
     });
@@ -76,19 +82,25 @@
     });
     
     app.filter('hours', function() {
-      return function(input) {
+      return function(input, format) {
         if (input === undefined) return;
         var match = hourRegExp.exec(input);        
         var degrees = Number(match[1]);
         var minutes = Number(match[2]);
         var seconds = Number(match[3]);
         var total_degrees = degrees + minutes/60.0 + seconds/3600.0;
-        return '' + degrees + ' hrs, ' + minutes + ' min,  ' + seconds + ' sec';
+        if (format === 'short') {
+          return '' + degrees + ':' + ('00'+minutes).slice(-2) + ':' + ('00'+seconds).slice(-2);
+        }
+        else {
+          return '' + degrees + ' hrs, ' + minutes + ' min,  ' + seconds + ' sec';
+        }
       };
     });
 
     app.controller('CalcController', ['$http', function($http) {
       this.location_info = null;
+      this.stats = null;
       var ctrl = this;
 
       this.fetchCity = function(city) {
@@ -96,8 +108,14 @@
 
         $http.get(restAPI + '/location?city=' + city).then(function(data) {
           ctrl.location_info = data.data;
+          // We have basic location information, so let us fetch also stats
+          $http.get(restAPI + '/stats?city=' + city).then(function(data) {
+            ctrl.stats = data.data;
+          }, function(err) {
+            ctrl.stats = null;
+          });
         }, function(err) {
-          ctrl.location_info = 'error fetching data : ' + err;
+          ctrl.location_info = null;
         });
       };
     }]);
