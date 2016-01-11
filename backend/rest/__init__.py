@@ -4,8 +4,6 @@ from __future__ import (absolute_import, division, print_function, unicode_liter
 from flask import Flask, Blueprint, current_app, request, render_template, redirect, flash, url_for, abort, request
 from flask_restful import Resource, Api, reqparse
 from jinja2 import TemplateNotFound
-import numpy as np
-import pygal
 from solarcalculator import SolarCalculator, SolarStats
 
 restapi_bp = Blueprint('restapi', __name__)

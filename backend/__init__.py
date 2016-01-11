@@ -2,13 +2,11 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 
 from flask import Flask, url_for, render_template, abort, flash, redirect, session, request, g, current_app
-from flask_bootstrap import Bootstrap, StaticCDN, WebCDN
 from flask_appconfig import AppConfig
 from flask.ext.cors import CORS
 from jinja2 import TemplateNotFound
 from .errorhandler import register_errorhandlers
 from .rest import restapi, restapi_bp
-from database.rediscon import rc
 
 def create_app(config=None, configfile=None):
     """
@@ -23,7 +21,6 @@ def create_app(config=None, configfile=None):
 
     # Configure app
     AppConfig(app, default_settings=config, configfile=configfile)
-    Bootstrap(app) # Use flask-bootstrap
     app.config['BOOTSTRAP_SERVE_LOCAL'] = True
 
     # Set up CORS
@@ -38,9 +35,6 @@ def create_app(config=None, configfile=None):
     # Production-specific functions
     if (app.config.get('PRODUCTION')):
         pass
-
-    # Initialize redis connection
-    rc.init_app(app)
 
     # Add REST api
     app.register_blueprint(restapi_bp)

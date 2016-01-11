@@ -1,8 +1,8 @@
 'use strict';
 (function() {
-    var app = angular.module('solarCalc', []);
+    var app = angular.module('solarCalc', ['config']);
     
-    var restAPI = 'http://localhost:5000';
+    var restAPI = config.restAPI;
     var coordRegExp = /(\-?)(\d{1,2})\:(\d{1,2})\:(\d{1,2}\.\d)/;
     var coordFormat = '$1$2°$3′$4″';
     var iso8601RegExp = /(\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})([+-])(\d{2})\:(\d{2})/;
