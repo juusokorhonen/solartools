@@ -2,7 +2,7 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 
 from flask import Flask, url_for, render_template, abort, flash, redirect, session, request, g, current_app
-from flask_appconfig import AppConfig
+from flask_appconfig import AppConfig, HerokuConfig
 from flask.ext.cors import CORS
 from jinja2 import TemplateNotFound
 from .errorhandler import register_errorhandlers
@@ -20,7 +20,7 @@ def create_app(config=None, configfile=None):
     app = Flask(__name__)
 
     # Configure app
-    AppConfig(app, default_settings=config, configfile=configfile)
+    HerokuConfig(app, default_settings=config, configfile=configfile)
     app.config['BOOTSTRAP_SERVE_LOCAL'] = True
 
     # Set up CORS

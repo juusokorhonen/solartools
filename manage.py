@@ -3,7 +3,6 @@ from __future__ import (absolute_import, unicode_literals, print_function, divis
 
 import os
 from flask.ext.script import Manager, Server
-
 from backend import create_app
 from flask import url_for
 from config import Config, DevelopmentConfig, TestingConfig, ProductionConfig
