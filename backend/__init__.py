@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 
-from flask import Flask, url_for, render_template, abort, flash, redirect, session, request, g, current_app
+from flask import Flask, url_for, abort, flash, redirect, session, request, g, current_app
 from flask_appconfig import AppConfig, HerokuConfig
 from flask.ext.cors import CORS
-from jinja2 import TemplateNotFound
 from .errorhandler import register_errorhandlers
 from .rest import restapi, restapi_bp
 
@@ -21,7 +20,6 @@ def create_app(config=None, configfile=None):
 
     # Configure app
     HerokuConfig(app, default_settings=config, configfile=configfile)
-    app.config['BOOTSTRAP_SERVE_LOCAL'] = True
 
     # Set up CORS
     CORS(app)
@@ -38,9 +36,6 @@ def create_app(config=None, configfile=None):
 
     # Add REST api
     app.register_blueprint(restapi_bp)
-
-    # Add errorhandler
-    register_errorhandlers(app)
 
     return app
 

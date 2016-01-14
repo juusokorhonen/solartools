@@ -1,0 +1,128 @@
+Description of the current REST API.
+
+/cities
+* GET
+  * Returns a list of known city locations
+  * Format example:
+    {"cities": 
+      [
+        {
+          "lat": "50.45", 
+          "lon": "30.5233333", 
+          "name": "Kiev", 
+          "elev": "157.210175"
+        }, 
+        {
+          "lat": "50.6371834", 
+          "lon": "3.0630174", 
+          "name": "Lille", 
+          "elev": "28.13949"
+        }
+      ]
+    }
+
+/location
+  * GET
+    * Returns the location information for the given city or coordinates
+    * Format example:
+```
+{
+  "sun": 
+    {
+      "alt": "9:21:00.5", 
+      "dec": "-21:20:28.3", 
+      "az": "215:40:10.9", 
+      "ra": "19:42:41.17"
+    }, 
+  "stats": 
+    {
+      "solarnoon": "2016-01-14T11:44:48+01:00", 
+      "noon": "2016-01-14T11:00:00+00:00", 
+      "daylength": "8:11:53", 
+      "sunset": "2016-01-14T15:50:57+01:00", 
+      "sunrise": "2016-01-14T07:39:04+01:00"
+    }, 
+  "observer": 
+    {
+      "elevation": "115.027786", 
+      "lon": "21:00:44.0", 
+      "date": "2016-01-14T14:17:29+01:00", 
+      "solartime": "2016-01-14T14:32:39+01:15", 
+      "lat": "52:13:46.8", 
+      "timezone": "Europe/Warsaw"
+    }
+}
+```
+    * Dates are in ISO8601 format
+    * Angles are in degrees:minutes:seconds
+    * Time intervals are in hours:minutes:seconds
+    * Hour angles are similar to time intervals
+    * Elevation is in meters above sea level
+    * Timezone is given as a Olson timezone marking
+    * Arguments:
+      * city=Dallas
+        * Searches for 'Dallas' in the city database
+        * Overrides lat, and lon arguments
+      * lat=12.34
+        * Latitude north of equator, in degrees
+      * lon=45.67
+        * Longitude east of Greenwich, in degrees
+      * elev=345
+        * Elevation from sea level, in meters
+
+/stats
+  * GET
+    * Yields daily sun statistics for the ongoing year
+    * Arguments are the same as for /location calls
+    * Format example
+```
+{
+  "days": 
+    [
+      {
+        "stats": 
+          {
+            "solarnoon": "2016-01-01T11:39:14+01:00", 
+            "noon": "2016-01-01T11:00:00+00:00", 
+            "daylength": "7:48:55", 
+            "sunset": "2016-01-01T15:33:47+01:00", 
+            "sunrise": "2016-01-01T07:44:52+01:00"
+          }, 
+        "daynumber": "0"
+      }, 
+      {
+        "stats": 
+          {
+            "solarnoon": "2016-01-02T11:39:42+01:00", 
+            "noon": "2016- 01-02T11:00:00+00:00", 
+            "daylength": "7:50:05", 
+            "sunset": "2016-01-02T15:34:51+01:00", 
+            "sunrise": "2016-01-02T07:44:46+01:00"
+          }, 
+          "daynumber": "1"
+        }, 
+    [ ... ]
+      {
+        "stats": 
+          {
+            "solarnoon": "2016-12-31T11:39:08+01:00", 
+            "noon": "2016-12-31T11:00:00+00:00", 
+            "daylength": "7:48:38", 
+            "sunset": "2016-12-31T15:33:32+01:00", 
+            "sunrise": "2016-12-31T07:44:54+01:00"
+          }, 
+          "daynumber": "365"
+        }
+      ], 
+    }
+  "observer": 
+    {
+      "elevation": "115.027786", 
+      "lon": "21:00:44.0", 
+      "year": 2016, 
+      "lat": "52:13:46.8", 
+      "timezone": "Europe/Warsaw"
+    }
+}
+```
+

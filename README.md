@@ -4,30 +4,30 @@ Tools for solving solar energy problems.
 ## Installation
 
 ### Install python2.7
-$ brew install python
+    $ brew install python
 
 ### Install pip
-$ easy_install pip
+    $ easy_install pip
 
 ### Install virtualenv and virtualenvwrapper
-$ pip install virtualenv virtualenvwrapper
+    $ pip install virtualenv virtualenvwrapper
 
 ### Make virtualenv
-$ mkvirtualenv --no-site-packages solartools
+    $ mkvirtualenv --no-site-packages solartools
 
 ### Switch to new virtualenv
-$ workon solartools
+    $ workon solartools
 
 ### Install python dependencies
-$ pip install -r requirements.txt
+    $ pip install -r requirements.txt
 
 ### Install redis server
-$ brew install redis
-$ ln -sfv /usr/local/opt/redis/*.plist ~/Library/LaunchAgents
-$ launchchtl load ~/Library/LaunchAgents/homebrew.mxcl.redis.plist
+    $ brew install redis
+    $ ln -sfv /usr/local/opt/redis/*.plist ~/Library/LaunchAgents
+    $ launchchtl load ~/Library/LaunchAgents/homebrew.mxcl.redis.plist
 
 ### Run solartools
-$ python manage.py runserver
+    $ python manage.py runserver
 
 
 # Using Git in this project (for developers)
@@ -63,21 +63,21 @@ Feature branches exist in developer repos only, not in origin.
 
 When starting work on a new feature, branch off from the develop branch.
 
-$ git checkout -b myfeature develop
-Switched to a new branch "myfeature"
+    $ git checkout -b myfeature develop
+    Switched to a new branch "myfeature"
 
 ## Incorporating a finished feature on develop
 
 Finished features may be merged into the develop branch definitely add them to the upcoming release:
 
-$ git checkout develop
-Switched to branch 'develop'
-$ git merge --no-ff myfeature
-Updating ea1b82a..05e9557
-(Summary of changes)
-$ git branch -d myfeature
-Deleted branch myfeature (was 05e9557).
-$ git push origin develop
+    $ git checkout develop
+    Switched to branch 'develop'
+    $ git merge --no-ff myfeature
+    Updating ea1b82a..05e9557
+    (Summary of changes)
+    $ git branch -d myfeature
+    Deleted branch myfeature (was 05e9557).
+    $ git push origin develop
 
 ## Release branches
 
@@ -92,13 +92,13 @@ Branch naming convention:
 
 ## Creating a release branch
 
-$ git checkout -b release-1.2 develop
-Switched to a new branch "release-1.2"
-$ ./bump-version.sh 1.2
-Files modified successfully, version bumped to 1.2.
-$ git commit -a -m "Bumped version number to 1.2"
-[release-1.2 74d9424] Bumped version number to 1.2
-1 files changed, 1 insertions(+), 1 deletions(-)
+    $ git checkout -b release-1.2 develop
+    Switched to a new branch "release-1.2"
+    $ ./bump-version.sh 1.2
+    Files modified successfully, version bumped to 1.2.
+    $ git commit -a -m "Bumped version number to 1.2"
+    [release-1.2 74d9424] Bumped version number to 1.2
+    1 files changed, 1 insertions(+), 1 deletions(-)
 
 bump-version.sh is a fictional shell script that changes some files in the working copy to reflect the new version.
 
@@ -106,27 +106,27 @@ bump-version.sh is a fictional shell script that changes some files in the worki
 
 First, the release branch is merged into master (since every commit on master is a new release by definition). Next, that commit on master must be tagged for easy future reference to this historical version. Finally, the changes made on the release branch need to be merged back into develop, so that future releases also contain these bug fixes.
 
-$ git checkout master
-Switched to branch 'master'
-$ git merge --no-ff release-1.2
-Merge made by recursive.
-(Summary of changes)
-$ git tag -a 1.2
+    $ git checkout master
+    Switched to branch 'master'
+    $ git merge --no-ff release-1.2
+    Merge made by recursive.
+    (Summary of changes)
+    $ git tag -a 1.2
 
 The release is now done, and tagged for future reference. 
 
 To keep the changes made in the release branch, we need to merge those back into develop, though. 
 
-$ git checkout develop
-Switched to branch 'develop'
-$ git merge --no-ff release-1.2
-Merge made by recursive.
-(Summary of changes)
+    $ git checkout develop
+    Switched to branch 'develop'
+    $ git merge --no-ff release-1.2
+    Merge made by recursive.
+    (Summary of changes)
 
 Now we are really done and the release branch may be removed, since we don’t need it anymore:
 
-$ git branch -d release-1.2
-Deleted branch release-1.2 (was ff452fe).
+    $ git branch -d release-1.2
+    Deleted branch release-1.2 (was ff452fe).
 
 ## Hotfix branches
 
@@ -143,41 +143,41 @@ Branch naming convention:
 
 Hotfix branches are created from the master branch. 
 
-$ git checkout -b hotfix-1.2.1 master
-Switched to a new branch "hotfix-1.2.1"
-$ ./bump-version.sh 1.2.1
-Files modified successfully, version bumped to 1.2.1.
-$ git commit -a -m "Bumped version number to 1.2.1"
-[hotfix-1.2.1 41e61bb] Bumped version number to 1.2.1
-1 files changed, 1 insertions(+), 1 deletions(-)
+    $ git checkout -b hotfix-1.2.1 master
+    Switched to a new branch "hotfix-1.2.1"
+    $ ./bump-version.sh 1.2.1
+    Files modified successfully, version bumped to 1.2.1.
+    $ git commit -a -m "Bumped version number to 1.2.1"
+    [hotfix-1.2.1 41e61bb] Bumped version number to 1.2.1
+    1 files changed, 1 insertions(+), 1 deletions(-)
 
 Then, fix the bug and commit the fix in one or more separate commits.
 
-$ git commit -m "Fixed severe production problem"
-[hotfix-1.2.1 abbe5d6] Fixed severe production problem
-5 files changed, 32 insertions(+), 17 deletions(-)
+    $ git commit -m "Fixed severe production problem"
+    [hotfix-1.2.1 abbe5d6] Fixed severe production problem
+    5 files changed, 32 insertions(+), 17 deletions(-)
 
 Update master and tag the release.
 
-$ git checkout master
-Switched to branch 'master'
-$ git merge --no-ff hotfix-1.2.1
-Merge made by recursive.
-(Summary of changes)
-$ git tag -a 1.2.1
+    $ git checkout master
+    Switched to branch 'master'
+    $ git merge --no-ff hotfix-1.2.1
+    Merge made by recursive.
+    (Summary of changes)
+    $ git tag -a 1.2.1
 
 Include the bugfix in develop
 
-$ git checkout develop
-Switched to branch 'develop'
-$ git merge --no-ff hotfix-1.2.1
-Merge made by recursive.
-(Summary of changes)
+    $ git checkout develop
+    Switched to branch 'develop'
+    $ git merge --no-ff hotfix-1.2.1
+    Merge made by recursive.
+    (Summary of changes)
 
 Finally, remove the temporary branch:
 
-$ git branch -d hotfix-1.2.1
-Deleted branch hotfix-1.2.1 (was abbe5d6).
+    $ git branch -d hotfix-1.2.1
+    Deleted branch hotfix-1.2.1 (was abbe5d6).
 
 # Version numbering (for developers)
 
