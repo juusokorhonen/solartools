@@ -2,10 +2,9 @@
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from flask import Flask, Blueprint, current_app, request, render_template, redirect, flash, url_for, abort
 from jinja2 import TemplateNotFound
-from flask_bootstrap import Bootstrap
 
 def register_errorhandlers(app):
- 
+
     @app.errorhandler(403)
     def forbidden_page(error):
         flash('Access was forbidden.')

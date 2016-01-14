@@ -1,6 +1,7 @@
 # App specific ignores
 config.py
 backend/dynamic/*
+venv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

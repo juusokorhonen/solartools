@@ -1,0 +1,16 @@
+Current version: v1.0
+
+v1.0 (14.1.2016)
+ * First working version of the REST API
+   * REST API calls:
+     * /cities
+       * Returns all known city locations
+     * /location?city=Helsinki
+       * Returns the location information for the given city
+       * Yields a 400 error if city is not found in database
+     * /location?lat=12.34&lon=56.78
+       * Returns the location information for the given coordinates
+     * /stats?city=Helsinki
+       * Returns the daily stats for the current year the the location
+     * /stats?lat=12.34&lon=56.78
+       * Returns the daily stats for the given coordinates
