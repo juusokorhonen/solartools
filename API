@@ -40,7 +40,10 @@ Description of the current REST API.
       "noon": "2016-01-14T11:00:00+00:00", 
       "daylength": "8:11:53", 
       "sunset": "2016-01-14T15:50:57+01:00", 
-      "sunrise": "2016-01-14T07:39:04+01:00"
+      "sunrise": "2016-01-14T07:39:04+01:00",
+      "daily_insolation": "1234.56",
+      "max_power": "2345.67",
+      "solar_power": "0.0"
     }, 
   "observer": 
     {
@@ -59,6 +62,8 @@ Description of the current REST API.
     * Hour angles are similar to time intervals
     * Elevation is in meters above sea level
     * Timezone is given as a Olson timezone marking
+    * Max. power (power at solar noon) and solar power are in W/m2
+    * Daily insolation is in Wh/m2 per day
     * Arguments:
       * city=Dallas
         * Searches for 'Dallas' in the city database
