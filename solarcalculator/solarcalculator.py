@@ -222,9 +222,6 @@ class SolarCalculator(object):
     minutes = np.round(seconds/60.0)
     #print("[DEBUG] minutes='{}'".format(minutes))
 
-
-
-
     tz = dateutil.tz.tzoffset(None, 60*minutes)
 
     return tz
@@ -322,6 +319,91 @@ class SolarCalculator(object):
     #print("[DEBUG] day_length()")
     return self.localized_date(date=self.sunset) - self.localized_date(date=self.sunrise)
 
+  def dst(self, dt=None):
+    """
+    Returns the day light savings time offset for the currently set date.
+    """
+    # Make sure that dt is in localized format as utc or naive times do not work
+    dt = self.localized_date(date=dt)
+
+    # dst is a timedelta object
+    dst = dt.dst()
+    #seconds = dst.total_seconds()
+
+    return dst
+
+  def solar_power(self, date=None):
+    """
+    Returns the solar power (at the moment) in units of W/m2 for a plane perpendicular to the sun direction.
+    """
+    saved_date = None
+    if (date is not None):
+      saved_date = self.date
+      self.date = date
+
+    solar_constant = 1361 # W/m2
+    diffuse_component = 0.10 # Diffuse component adds 10%
+
+    # First check if we actually see the sun
+    if (self.sun.alt < 0):
+      return 0.0 # As an estimate, we put 0 W/m2 when sun is below horizon
+
+    # Calculate air mass (usually calculated for 'zenith', but now for the current sun position
+    am = self.airmass(ephem.pi/2.0 - self.sun.alt) # alt is the angle of the sun above the horizon
+    #print("[DEBUG] air mass = {}".format(am))
+
+    # Calculate direct intensity (on a perpendicual plate)
+    intensity = solar_constant * (1.0+diffuse_component) * 0.7**(am**0.678)
+    #print("[DEBUG] intensity ({}) : {}".format(self.date, intensity))
+
+    if (saved_date is not None):
+      self.date = saved_date
+
+    return intensity
+
+  def solar_power_horizontal(self):
+    """
+    Returns the solar power (at the moment) in units of W/m2 for a horizontally aligned plane.
+    """
+    return self.solar_power() * np.sin(self.sun.alt)
+
+  def solar_energy(self):
+    """
+    Returns the total solar energy for today in the units of Wh/m2.
+    """
+    # Save current date
+    saved_date = self.date
+
+    sunrise = self.localized_date(date=self.sunrise)
+    sunset = self.localized_date(date=self.sunset)
+    daylength = self.day_length
+    dl = daylength.total_seconds()/60.0 # Day length in minutes
+
+    interval = 30 # Calculate for every 30 minutes
+    td_min = np.arange(0, dl, interval) # A np array for every 30 minutes
+
+    power = []
+
+    for td in td_min:
+      # Repeat calculation for every interval
+      dt = sunrise + timedelta(0, 60.0*td)
+      self.date = dt
+      #print("[DEBUG] date = {}".format(self.date))
+      self.force_compute()
+      power.append(self.solar_power()) # Append power in W/m2
+
+    # Integrate power to get energy
+    #power = np.array(power)
+    #print("[DEBUG] power = {}".format(power))
+
+    energy = np.trapz(power, dx=(interval/60.0)) # Yields energy in units of Wh/m2 (perpendicular)
+
+    # Reset date
+    self.date = saved_date
+    self.force_compute()
+
+    return energy
+
   def force_compute(self):
     """
     Forces sun to compute against the observer. Should be called if observer was changed manually.
@@ -351,6 +433,10 @@ class SolarCalculator(object):
           'noon': self.stringify(self.localized_date(date=self.noon, tz=pytz.utc)),
           'solarnoon': self.stringify(self.localized_date(date=self.solarnoon)),
           'daylength': str(self.day_length),
+          'dst': str(self.dst()),
+          'solar_power': str(self.solar_power()),
+          'max_power': str(self.solar_power(date=self.solarnoon)),
+          'daily_insolation': str(self.solar_energy()),
           },
         'sun': {
           'ra': str(self.sun.ra),
@@ -399,6 +485,27 @@ class SolarCalculator(object):
     date_local = SolarCalculator.round_datetime(date_local)
 
     return date_local
+
+  @staticmethod
+  def airmass(z):
+    """
+    Returns the airmass as a function of the given angle, z, the zenith angle (if float, then in radians; a string is assumed to be degrees).
+    """
+    z = ephem.degrees(z) # Parse angle into ephem.Angle
+    z = float(z) # Convert to radians
+
+    am = 1.0/np.cos(z) # This is the most simple formula
+
+    # Kasten and Young 1989:
+    #am = 1.0 / ( np.cos(z) + 0.50572 * (np.deg2rad(96.07995) - z)**(-1.6364) )
+
+    # Spherical shell
+    Re = 6371.0
+    yatm = 9.0
+    r = Re/yatm
+    am = np.sqrt( (r*np.cos(z))**2 + 2*r + 1  ) - r*np.cos(z)
+
+    return am
 
   @staticmethod
   def stringify(dt):
